@@ -150,7 +150,7 @@ function run(){
         app.post('/add-blog', async (req, res)=>{
             const blogData = req.body.blogData;
             const result = await blogs.insertOne(blogData);
-            console.log(blogData)
+            res.send(result)
 
         })
 
