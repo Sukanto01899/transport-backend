@@ -32,6 +32,7 @@ function run(){
         client.connect();
         const database = client.db('transport');
         const inventory = database.collection('inventory');
+        const blogs = database.collection('blogs');
 
         app.get('/', (req, res)=>{
             res.send('hello world')
@@ -110,7 +111,7 @@ function run(){
             }
         })
 
-        // Deliver the item
+        // Deliver the inventory item
         app.put('/deliver/:id', async (req, res)=>{
             const id = req.params.id
             const delivered = parseInt(req.body.delivered);
@@ -129,7 +130,7 @@ function run(){
             res.send(result)
         })
 
-        // add quantity
+        // add inventory quantity
         app.put('/add-quantity/:id', async (req, res)=>{
             const id = req.params.id;
             const count = parseInt(req.body.count);
@@ -142,6 +143,47 @@ function run(){
 
             const result = await inventory.updateOne(filter, updateDoc, option);
             res.send(result)
+        })
+
+
+        // Add a blog
+        app.post('/add-blog', async (req, res)=>{
+            const blogData = req.body.blogData;
+            const result = await blogs.insertOne(blogData);
+            console.log(blogData)
+
+        })
+
+        //Delete a blog
+        app.delete('/delete-blog/:id', async (req, res)=>{
+            const id = req.params.id
+            const query = {_id: new ObjectId(id)};
+            const result = await blogs.deleteOne(query);
+            if(result.deletedCount === 1){
+                res.send({deleted: true})
+            }else{
+                res.send({deleted: false})
+            }
+        })
+
+        //Get blog with pagination
+        app.get('/blogs',async (req, res)=>{
+            const limit = parseInt(req.query.limit);
+            const page = parseInt(req.query.page);
+            const searchQuery = req.query.query;
+            const query = searchQuery ? {name: searchQuery} : {};
+            const cursor = blogs.find(query).skip(limit * page).limit(limit);
+            const allBlog = await cursor.toArray();
+            const estimate = await blogs.estimatedDocumentCount()
+            res.send({allBlog, estimate})
+        })
+
+        //Get single blog
+        app.get('/blog/:id', async (req, res)=>{
+            const id = req.params.id;
+            const filter = {_id: new ObjectId(id)};
+            const blogDetails = await blogs.findOne(filter);
+            res.send(blogDetails)
         })
     }
     finally{}
